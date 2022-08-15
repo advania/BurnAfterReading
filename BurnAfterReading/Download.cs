@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Azure.Storage.Blobs;
+using Azure.Storage.Queues;
 
 namespace BurnAfterReading
 {
@@ -17,13 +18,17 @@ namespace BurnAfterReading
         public static async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "Download/{id:guid}")] HttpRequest req,
             [Blob("burn/{id}")] BlobClient blob,
-            [Queue("CleanupQueue")] ICollector<string> outputQueueItem,
+            [Queue("CleanupQueue")] QueueClient outputQueueItem,
             string id,
             ILogger log)
         {
-            log.LogInformation($"Returning file {id}");
+            log.LogInformation($"Returning blob: {id}");
 
-            outputQueueItem.Add(id);
+            if (!await blob.ExistsAsync()) return new BadRequestResult();
+
+            req.HttpContext.Response.Headers.Add(new ("Content-Disposition", "attachment"));
+
+            outputQueueItem.SendMessage(id, visibilityTimeout: TimeSpan.FromMinutes(1));
 
             return new FileStreamResult(blob.OpenRead(), "application/octet-stream");
         }

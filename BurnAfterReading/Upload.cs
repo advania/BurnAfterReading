@@ -8,21 +8,21 @@ using Azure.Storage.Blobs;
 
 namespace BurnAfterReading
 {
-    public static class Upload
-    {
-        [FunctionName("Upload")]
-        public static async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
-            [Blob("burn/{rand-guid}")] BlobClient blob,
-            ILogger log)
-        {
-            if (req.Form.Files["File"] is not IFormFile file) return new BadRequestResult();
+	public static class Upload
+	{
+		[FunctionName("Upload")]
+		public static async Task<IActionResult> Run(
+			[HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
+			[Blob("burn/{rand-guid}")] BlobClient blob,
+			ILogger log)
+		{
+			if (req.Headers["content-length"] == "0") return new BadRequestResult();
 
-            await blob.UploadAsync(file.OpenReadStream());
+			log.LogInformation($"Creating blob: {blob.Name}");
 
-            var path = req;
+			await blob.UploadAsync(req.Body);
 
-            return new CreatedResult($"{req.Host}/api/Download/{blob.Name}", blob.Name);
-        }
-    }
+			return new CreatedResult($"{req.Host}/api/Download/{blob.Name}", blob.Name);
+		}
+	}
 }

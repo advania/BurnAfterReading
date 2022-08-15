@@ -6,18 +6,18 @@ using Microsoft.Extensions.Logging;
 
 namespace BurnAfterReading
 {
-    public class CleanUp
-    {
-        [FunctionName("CleanUp")]
-        public void Run([QueueTrigger("CleanupQueue")]string myQueueItem,
-            [Blob("burn")] BlobContainerClient blobContainerClient,
-            ILogger log)
-        {
-            log.LogInformation($"C# Queue trigger function processed: {myQueueItem}");
+	public class CleanUp
+	{
+		[FunctionName("CleanUp")]
+		public void Run([QueueTrigger("CleanupQueue")] string myQueueItem,
+			[Blob("burn")] BlobContainerClient blobContainerClient,
+			ILogger log)
+		{
+			log.LogInformation($"Cleaning up blob: {myQueueItem}");
 
-            var blob = blobContainerClient.GetBlobClient(myQueueItem);
+			var blob = blobContainerClient.GetBlobClient(myQueueItem);
 
-            blob.DeleteIfExists();
-        }
-    }
+			blob.DeleteIfExists();
+		}
+	}
 }
